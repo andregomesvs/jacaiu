@@ -1,0 +1,30 @@
+# Dependências
+node_modules/
+.expo/
+
+# Variáveis de ambiente (NUNCA subir as chaves!)
+.env
+.env.local
+.env.*.local
+
+# Build
+site/.next/
+site/out/
+app/dist/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Expo
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
