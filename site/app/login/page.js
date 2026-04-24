@@ -1,7 +1,9 @@
 // site/app/login/page.js
-import dynamic from 'next/dynamic';
+export const dynamic = 'force-dynamic';
 
-const LoginContent = dynamic(() => import('./LoginContent'), {
+import nextDynamic from 'next/dynamic';
+
+const LoginContent = nextDynamic(() => import('./LoginContent'), {
   ssr: false,
   loading: () => (
     <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

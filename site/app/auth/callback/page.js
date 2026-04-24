@@ -1,7 +1,9 @@
 // site/app/auth/callback/page.js
-import dynamic from 'next/dynamic';
+export const dynamic = 'force-dynamic';
 
-const AuthCallbackContent = dynamic(() => import('./AuthCallbackContent'), {
+import nextDynamic from 'next/dynamic';
+
+const AuthCallbackContent = nextDynamic(() => import('./AuthCallbackContent'), {
   ssr: false,
   loading: () => (
     <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
