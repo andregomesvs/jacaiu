@@ -24,10 +24,24 @@ export default function Dashboard() {
   const [listCounts, setListCounts] = useState({});
   const [activeNav, setActiveNav] = useState('home');
 
+  async function ensureProfile(user) {
+    const { data } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle();
+    if (!data) {
+      const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        username: name,
+        avatar_url: user.user_metadata?.avatar_url || null,
+      }, { onConflict: 'id' });
+    }
+  }
+
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login'); return; }
       setUser(user);
+      // Garante que o profile existe antes de carregar dados
+      await ensureProfile(user);
       loadData(user.id);
     });
 
@@ -126,6 +140,9 @@ export default function Dashboard() {
   const bannedPlayers = players.filter(p => p.is_banned);
   const cleanPlayers = players.filter(p => !p.is_banned);
   const bannedCount = bannedPlayers.length;
+
+  // Debug: verificar dados dos jogadores
+  console.log('[Dashboard] players:', players.length, players);
 
   // Cores de avatar baseadas na inicial
   const avatarColors = ['#1A2332', '#1A2332', '#1A2332', '#1A2332', '#1A2332', '#1A2332'];

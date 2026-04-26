@@ -80,6 +80,8 @@
   padding: 16px;
   max-width: 600px;
   margin: 0 auto;
+  position: relative;
+  z-index: 2;
 }
 
 /* Stats */
