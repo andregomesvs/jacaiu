@@ -97,7 +97,7 @@ export default function LandingPage() {
         <h2 className={styles.howTitle}>Como funciona</h2>
         <div className={styles.steps}>
           {[
-            { num: '01', title: 'Crie sua conta', desc: 'Cadastro com e-mail ou Google em segundos.' },
+            { num: '01', title: 'Crie sua conta', desc: 'Login rápido com Google em segundos.' },
             { num: '02', title: 'Adicione jogadores', desc: 'Cole o link do perfil Steam de quem quiser monitorar.' },
             { num: '03', title: 'Receba alertas', desc: 'Quando alguém cair, você é notificado na hora.' },
           ].map(step => (

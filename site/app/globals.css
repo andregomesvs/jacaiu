@@ -1,17 +1,32 @@
-/* site/app/globals.css */
+/* site/app/globals.css — Tema gamer CS2 */
 
 :root {
-  --green: #00FF87;
-  --red: #FF3D57;
-  --yellow: #FFD93D;
-  --bg: #0A0A0A;
-  --surface: #111111;
-  --surface2: #161616;
-  --border: #1E1E1E;
-  --text: #E0E0E0;
-  --muted: #555555;
-  --font-mono: var(--font-mono), monospace;
-  --font-display: var(--font-display), sans-serif;
+  --primary: #FF4655;
+  --primary-dark: #D6303E;
+  --primary-glow: rgba(255,70,85,0.3);
+  --accent: #FF4655;
+  --blue: #3B82F6;
+  --blue-light: rgba(59,130,246,0.15);
+  --green: #4ADE80;
+  --green-light: rgba(74,222,128,0.15);
+  --red: #FF4655;
+  --red-light: rgba(255,70,85,0.15);
+  --yellow: #FBBF24;
+  --yellow-light: rgba(251,191,36,0.15);
+  --bg: #0A0E14;
+  --bg-secondary: #111820;
+  --surface: #151C28;
+  --surface2: #1A2332;
+  --border: #1E2A3A;
+  --border-light: #253345;
+  --text: #E8EAED;
+  --text-secondary: #7A8599;
+  --text-muted: #445566;
+  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-mono), 'Courier New', monospace;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 14px;
 }
 
 * {
@@ -23,7 +38,7 @@
 html, body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -31,98 +46,112 @@ html, body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #3A3A3A; }
+::-webkit-scrollbar-thumb { background: #253345; border-radius: 4px; }
 
 /* Links */
 a { color: inherit; text-decoration: none; }
 
-/* Inputs globais */
+/* Inputs */
 input, textarea, select {
-  font-family: var(--font-mono);
-  background: var(--surface2);
+  font-family: var(--font-sans);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text);
-  padding: 10px 14px;
-  font-size: 13px;
+  padding: 12px 16px;
+  font-size: 15px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;
 }
-input:focus, textarea:focus, select:focus {
-  border-color: var(--green);
+input:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
 }
 
 /* Botões */
 .btn {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   cursor: pointer;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
   font-weight: 700;
-  padding: 10px 20px;
-  transition: all 0.15s;
-  letter-spacing: 0.5px;
+  padding: 12px 24px;
+  transition: all 0.2s;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .btn-primary {
-  background: var(--green);
-  color: #000;
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
-.btn-primary:hover { background: #00e87b; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:active { transform: scale(0.98); }
 
-.btn-ghost {
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid var(--border);
-}
-.btn-ghost:hover { border-color: var(--green); color: var(--green); }
-
-.btn-danger {
-  background: transparent;
-  color: var(--red);
-  border: 1px solid var(--red);
-}
-.btn-danger:hover { background: #FF3D5715; }
-
-/* Cards */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
+/* Badges */
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Animação de entrada */
+/* Animações */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.fade-up { animation: fadeUp 0.3s ease forwards; }
-
-/* Status dots */
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-.status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
-.status-dot.red { background: var(--red); box-shadow: 0 0 6px var(--red); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px var(--primary-glow); }
+  50% { box-shadow: 0 0 20px var(--primary-glow), 0 0 40px rgba(255,70,85,0.1); }
+}
 
-/* Layout utilitários */
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.gap-2 { gap: 8px; }
-.gap-4 { gap: 16px; }
-.gap-6 { gap: 24px; }
-.w-full { width: 100%; }
-.text-muted { color: var(--muted); }
-.text-green { color: var(--green); }
-.text-red { color: var(--red); }
+/* Background CS2 */
+.bg-cs2 {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(10,14,20,0.92) 0%, rgba(10,14,20,0.97) 100%),
+    url('/cs2-bg.jpg') center/cover no-repeat;
+  pointer-events: none;
+}
+.bg-cs2::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(255,70,85,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.04) 0%, transparent 50%);
+}
+
+/* Grid overlay */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255,70,85,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,70,85,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}

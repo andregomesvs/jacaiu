@@ -1,21 +1,21 @@
-/* site/app/landing.module.css */
+/* site/app/landing.module.css — Tema claro */
 
 .root {
   min-height: 100vh;
-  background: #0A0A0A;
-  color: #E0E0E0;
-  font-family: var(--font-mono);
+  background: #F5F5F7;
+  color: #1C1C1E;
+  font-family: var(--font-sans);
   position: relative;
   overflow: hidden;
 }
 
-/* Grid de fundo */
+/* Grid de fundo sutil */
 .grid {
   position: fixed;
   inset: 0;
   background-image:
-    linear-gradient(rgba(0,255,135,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,135,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(37,99,235,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,99,235,0.03) 1px, transparent 1px);
   background-size: 60px 60px;
   pointer-events: none;
   z-index: 0;
@@ -26,29 +26,32 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 60px;
-  border-bottom: 1px solid #1A1A1A;
-  position: relative;
+  padding: 16px 60px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #E5E5EA;
+  position: sticky;
+  top: 0;
   z-index: 10;
 }
 .navLogo {
   display: flex; align-items: center; gap: 10px;
-  font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.5px;
+  font-size: 16px; font-weight: 700; color: #1C1C1E;
 }
-.navLogoIcon { font-size: 18px; color: #00FF87; }
+.navLogoIcon { font-size: 18px; color: #2563EB; }
 .navLinks { display: flex; gap: 12px; align-items: center; }
 .navBtn {
-  font-size: 13px; color: #555; padding: 8px 16px;
-  border: 1px solid #222; border-radius: 8px;
-  transition: all 0.15s;
+  font-size: 14px; color: #8E8E93; padding: 8px 18px;
+  border: 1px solid #E5E5EA; border-radius: 8px;
+  transition: all 0.2s; background: transparent;
 }
-.navBtn:hover { border-color: #444; color: #bbb; }
+.navBtn:hover { border-color: #C7C7CC; color: #1C1C1E; }
 .navBtnPrimary {
-  font-size: 13px; font-weight: 700; color: #000;
-  background: #00FF87; padding: 8px 16px; border-radius: 8px;
-  transition: background 0.15s;
+  font-size: 14px; font-weight: 600; color: #fff;
+  background: #2563EB; padding: 8px 18px; border-radius: 8px;
+  transition: background 0.2s;
 }
-.navBtnPrimary:hover { background: #00e87b; }
+.navBtnPrimary:hover { background: #1D4ED8; }
 
 /* Hero */
 .hero {
@@ -61,32 +64,31 @@
 }
 .heroBadge {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 11px; color: #00FF87; letter-spacing: 1px;
-  background: #00FF8715; border: 1px solid #00FF8730;
-  padding: 5px 14px; border-radius: 20px; margin-bottom: 28px;
+  font-size: 12px; color: #2563EB; letter-spacing: 0.5px;
+  background: #DBEAFE; border: 1px solid #BFDBFE;
+  padding: 6px 16px; border-radius: 20px; margin-bottom: 28px;
+  font-weight: 600;
 }
 .heroBadgeDot {
   width: 6px; height: 6px; border-radius: 50%;
-  background: #00FF87; animation: pulse 2s ease infinite;
+  background: #2563EB; animation: pulse 2s ease infinite;
 }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
 .heroTitle {
-  font-size: clamp(52px, 8vw, 88px);
+  font-size: clamp(48px, 8vw, 80px);
   font-weight: 700;
-  color: #fff;
+  color: #1C1C1E;
   letter-spacing: -2px;
   line-height: 1;
   margin-bottom: 24px;
-  font-family: var(--font-display);
 }
 .heroSub {
-  font-size: 15px;
-  color: #555;
+  font-size: 16px;
+  color: #8E8E93;
   line-height: 1.7;
-  max-width: 500px;
+  max-width: 480px;
   margin: 0 auto 36px;
-  letter-spacing: 0.3px;
 }
 
 .heroCta {
@@ -94,20 +96,21 @@
   gap: 16px; margin-bottom: 40px; flex-wrap: wrap;
 }
 .ctaPrimary {
-  font-size: 14px; font-weight: 700; color: #000;
-  background: #00FF87; padding: 13px 28px; border-radius: 10px;
-  transition: background 0.15s; letter-spacing: 0.5px;
+  font-size: 15px; font-weight: 600; color: #fff;
+  background: #2563EB; padding: 14px 32px; border-radius: 12px;
+  transition: background 0.2s; box-shadow: 0 2px 8px rgba(37,99,235,0.3);
 }
-.ctaPrimary:hover { background: #00e87b; }
-.ctaNote { font-size: 12px; color: #333; }
+.ctaPrimary:hover { background: #1D4ED8; }
+.ctaNote { font-size: 13px; color: #AEAEB2; }
 
 .platforms {
   display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
 }
 .platformChip {
   display: flex; align-items: center; gap: 8px;
-  border: 1px solid; border-radius: 20px;
-  padding: 6px 14px; font-size: 12px; background: #111;
+  border: 1px solid #E5E5EA; border-radius: 20px;
+  padding: 6px 16px; font-size: 13px; background: #fff;
+  font-weight: 500;
 }
 
 /* Features */
@@ -122,12 +125,13 @@
   z-index: 1;
 }
 .featureCard {
-  background: #111; border: 1px solid #1A1A1A;
-  border-radius: 14px; padding: 28px;
+  background: #fff; border: 1px solid #E5E5EA;
+  border-radius: 16px; padding: 28px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
-.featureIcon { font-size: 24px; margin-bottom: 14px; }
-.featureTitle { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-.featureDesc { font-size: 13px; color: #555; line-height: 1.6; }
+.featureIcon { font-size: 28px; margin-bottom: 14px; }
+.featureTitle { font-size: 16px; font-weight: 600; color: #1C1C1E; margin-bottom: 8px; }
+.featureDesc { font-size: 14px; color: #8E8E93; line-height: 1.6; }
 
 /* How it works */
 .howItWorks {
@@ -136,46 +140,47 @@
   position: relative; z-index: 1;
 }
 .howTitle {
-  font-size: 22px; font-weight: 700; color: #fff;
+  font-size: 24px; font-weight: 700; color: #1C1C1E;
   text-align: center; margin-bottom: 36px; letter-spacing: -0.5px;
 }
 .steps {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
 }
 .step {
-  background: #111; border: 1px solid #1A1A1A;
-  border-radius: 12px; padding: 24px; text-align: center;
+  background: #fff; border: 1px solid #E5E5EA;
+  border-radius: 16px; padding: 28px; text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .stepNum {
-  font-size: 11px; color: #00FF87; letter-spacing: 2px;
-  margin-bottom: 12px; font-family: var(--font-display);
+  font-size: 12px; color: #2563EB; letter-spacing: 2px;
+  margin-bottom: 12px; font-weight: 700;
 }
-.stepTitle { font-size: 15px; font-weight: 700; color: #ddd; margin-bottom: 8px; }
-.stepDesc { font-size: 12px; color: #555; line-height: 1.6; }
+.stepTitle { font-size: 15px; font-weight: 600; color: #1C1C1E; margin-bottom: 8px; }
+.stepDesc { font-size: 13px; color: #8E8E93; line-height: 1.6; }
 
 /* CTA final */
 .ctaSection {
   text-align: center; padding: 60px 40px 80px;
-  border-top: 1px solid #1A1A1A;
+  border-top: 1px solid #E5E5EA;
   position: relative; z-index: 1; display: flex;
   flex-direction: column; align-items: center; gap: 24px;
 }
-.ctaTitle { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+.ctaTitle { font-size: 28px; font-weight: 700; color: #1C1C1E; letter-spacing: -0.5px; }
 
 /* Footer */
 .footer {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 20px 60px; border-top: 1px solid #1A1A1A;
-  font-size: 11px; color: #333;
+  padding: 20px 60px; border-top: 1px solid #E5E5EA;
+  font-size: 12px; color: #AEAEB2;
   position: relative; z-index: 1;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .nav { padding: 16px 20px; }
+  .nav { padding: 14px 20px; }
   .hero { padding: 60px 20px 50px; }
   .features { grid-template-columns: 1fr; padding: 0 20px 50px; }
-  .steps { grid-template-columns: 1fr; padding: 0 20px; }
+  .steps { grid-template-columns: 1fr; }
   .howItWorks { padding: 0 20px 50px; }
   .footer { padding: 16px 20px; flex-direction: column; gap: 8px; text-align: center; }
 }

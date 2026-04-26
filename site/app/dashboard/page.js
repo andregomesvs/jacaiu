@@ -1,11 +1,12 @@
 'use client';
 // site/app/dashboard/page.js
-// Página principal do dashboard após login
 
 import { useState, useEffect } from 'react';
 import { supabase, getPlayers, addPlayer, removePlayer, getProfile } from '../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import styles from './dashboard.module.css';
+import GamingBackground from '../components/GamingBackground';
+import { Crosshair, Radar, Swords, Soldier, Target, Plus, Logout } from '../components/Icons';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -17,12 +18,11 @@ export default function Dashboard() {
   const [steamInput, setSteamInput] = useState('');
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState('');
-  const [activeTab, setActiveTab] = useState('todos');
-  const [search, setSearch] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [checking, setChecking] = useState(false);
   const [checkResult, setCheckResult] = useState('');
   const [listCounts, setListCounts] = useState({});
+  const [activeNav, setActiveNav] = useState('home');
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -31,7 +31,6 @@ export default function Dashboard() {
       loadData(user.id);
     });
 
-    // Realtime: atualiza lista se algum ban for detectado
     const channel = supabase
       .channel('bans-realtime')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bans' }, () => {
@@ -46,11 +45,10 @@ export default function Dashboard() {
     setLoading(true);
     const [playersRes, profileRes] = await Promise.all([
       getPlayers(userId),
-      getProfile(userId)
+      getProfile(userId),
     ]);
     if (playersRes.data) {
       setPlayers(playersRes.data);
-      // Busca quantas listas cada jogador está
       loadListCounts(playersRes.data);
     }
     if (profileRes.data) setProfile(profileRes.data);
@@ -60,7 +58,6 @@ export default function Dashboard() {
   async function loadListCounts(playersList) {
     const steamIds = playersList.map(p => p.steam_id).filter(Boolean);
     if (steamIds.length === 0) return;
-
     try {
       const res = await fetch('/api/player-counts', {
         method: 'POST',
@@ -69,26 +66,20 @@ export default function Dashboard() {
       });
       const counts = await res.json();
       setListCounts(counts);
-    } catch {
-      // Silently fail
-    }
+    } catch {}
   }
 
   async function handleAddPlayer() {
     if (!steamInput.trim()) return;
     setAdding(true);
     setAddError('');
-
     const { data, error } = await addPlayer(user.id, steamInput);
     if (error) {
-      setAddError(error.message === 'duplicate key value violates unique constraint'
-        ? 'Esse jogador já está na sua lista!'
-        : error.message);
+      setAddError(error.message.includes('duplicate') ? 'Jogador já está na sua lista!' : error.message);
     } else {
       setPlayers(prev => [{ ...data, bans: [] }, ...prev]);
       setSteamInput('');
       setAddOpen(false);
-      // Verifica bans imediatamente após adicionar
       checkBans(data.id);
     }
     setAdding(false);
@@ -114,16 +105,13 @@ export default function Dashboard() {
         body: JSON.stringify(playerId ? { playerId } : { checkAll: true }),
       });
       const result = await res.json();
-
       if (result.bansFound > 0) {
         setCheckResult(`${result.bansFound} ban(s) encontrado(s)!`);
       } else {
         setCheckResult(`${result.checked} jogador(es) verificado(s). Nenhum ban novo.`);
       }
-
-      // Recarrega dados para atualizar status
       await loadData(user.id);
-    } catch (err) {
+    } catch {
       setCheckResult('Erro ao verificar bans.');
     }
     setChecking(false);
@@ -135,274 +123,217 @@ export default function Dashboard() {
     router.push('/');
   }
 
-  const filtered = players.filter(p => {
-    const matchSearch = p.display_name.toLowerCase().includes(search.toLowerCase())
-      || p.steam_id.toLowerCase().includes(search.toLowerCase());
-    if (activeTab === 'banidos') return matchSearch && p.is_banned;
-    if (activeTab === 'limpos') return matchSearch && !p.is_banned;
-    return matchSearch;
-  });
+  const bannedPlayers = players.filter(p => p.is_banned);
+  const cleanPlayers = players.filter(p => !p.is_banned);
+  const bannedCount = bannedPlayers.length;
 
-  const bannedCount = players.filter(p => p.is_banned).length;
+  // Cores de avatar baseadas na inicial
+  const avatarColors = ['#1A2332', '#1A2332', '#1A2332', '#1A2332', '#1A2332', '#1A2332'];
+  const avatarTextColors = ['#FF4655', '#4ADE80', '#3B82F6', '#FBBF24', '#A78BFA', '#F97316'];
+  function getAvatarColor(name) {
+    const i = (name || 'A').charCodeAt(0) % avatarColors.length;
+    return { bg: avatarColors[i], text: avatarTextColors[i] };
+  }
 
   if (loading) return (
     <div className={styles.loadingScreen}>
-      <div className={styles.loadingLogo}>⬇ Já Caiu?</div>
-      <div className={styles.loadingDots}>
-        <span /><span /><span />
-      </div>
+      <GamingBackground />
+      <div className={styles.loadingSpinner} />
+      <div className={styles.loadingText}>Carregando...</div>
     </div>
   );
 
   return (
     <div className={styles.root}>
-      {/* Sidebar */}
-      <aside className={styles.sidebar}>
-        <div className={styles.logo}>
-          <span className={styles.logoIcon}>⬇</span>
-          <span className={styles.logoText}>Já Caiu?</span>
+      <GamingBackground />
+
+      {/* Top Nav */}
+      <div className={styles.topNav}>
+        <div className={styles.logoWrap}>
+          <div className={styles.logoBox}>JC</div>
+          <span className={styles.logoText}>JA CAIU<span className={styles.logoAccent}>?</span></span>
         </div>
-
-        <nav className={styles.nav}>
-          {[
-            { id: 'dashboard', label: 'Dashboard', icon: '⬡' },
-            { id: 'lista', label: 'Minha Lista', icon: '◈' },
-            { id: 'alertas', label: 'Alertas', icon: '◉' },
-            { id: 'perfil', label: 'Perfil', icon: '○' },
-          ].map(item => (
-            <a key={item.id} href={`/${item.id === 'dashboard' ? 'dashboard' : item.id}`} className={styles.navItem}>
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </a>
-          ))}
-        </nav>
-
-        <div className={styles.sidebarFooter}>
-          <div className={styles.userInfo}>
-            {profile?.avatar_url
-              ? <img src={profile.avatar_url} className={styles.userAvatar} alt="" />
-              : <div className={styles.userAvatarInitials}>{user?.email?.[0]?.toUpperCase()}</div>
-            }
-            <div>
-              <div className={styles.userName}>{profile?.username || user?.email?.split('@')[0]}</div>
-              <div className={styles.userEmail}>{user?.email}</div>
-            </div>
-          </div>
-          <button className={styles.signOutBtn} onClick={handleSignOut}>Sair</button>
-        </div>
-      </aside>
-
-      {/* Conteúdo principal */}
-      <main className={styles.main}>
-        <div className={styles.content}>
-
-          {/* Header */}
-          <div className={styles.header}>
-            <div>
-              <h1 className={styles.title}>Dashboard</h1>
-              <p className={styles.subtitle}>Monitoramento em tempo real</p>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                className={styles.checkBtn}
-                onClick={() => checkBans()}
-                disabled={checking}
-              >
-                {checking ? '⏳ Verificando...' : '🔍 Verificar bans'}
-              </button>
-              <button className="btn btn-primary" onClick={() => setAddOpen(true)}>
-                + Adicionar jogador
-              </button>
-            </div>
-          </div>
-
-          {/* Resultado da verificação */}
-          {checkResult && (
-            <div className={styles.checkResult}>
-              {checkResult}
+        <div className={styles.topNavRight}>
+          <button
+            className={styles.checkBtn}
+            onClick={() => checkBans()}
+            disabled={checking}
+          >
+            <Target size={14} color="currentColor" />
+            {checking ? 'Verificando...' : 'Scan'}
+          </button>
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} className={styles.userAvatar} alt="" />
+          ) : (
+            <div className={styles.userAvatarInitials}>
+              {(user?.user_metadata?.full_name || user?.email || 'U')[0].toUpperCase()}
             </div>
           )}
+        </div>
+      </div>
 
-          {/* Stats */}
-          <div className={styles.statsGrid}>
-            <div className={`${styles.statCard} ${styles.statGreen}`}>
-              <div className={styles.statLabel}>Monitorados</div>
-              <div className={styles.statValue}>{players.length}</div>
+      {/* Content */}
+      <div className={styles.content}>
+        {/* Check result */}
+        {checkResult && <div className={styles.checkResult}>{checkResult}</div>}
+
+        {/* Stats */}
+        <div className={styles.statsRow}>
+          <div className={`${styles.statCard} ${styles.statGreen}`}>
+            <div className={styles.statValue}>{players.length}</div>
+            <div className={styles.statLabel}>Monitorados</div>
+          </div>
+          <div className={`${styles.statCard} ${styles.statRed}`}>
+            <div className={styles.statValue}>{bannedCount}</div>
+            <div className={styles.statLabel}>Banidos</div>
+          </div>
+          <div className={`${styles.statCard} ${styles.statBlue}`}>
+            <div className={styles.statValue}>{players.length - bannedCount}</div>
+            <div className={styles.statLabel}>Limpos</div>
+          </div>
+        </div>
+
+        {/* Bans recentes */}
+        {bannedPlayers.length > 0 && (
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionTitle}>Bans recentes</span>
             </div>
-            <div className={`${styles.statCard} ${styles.statRed}`}>
-              <div className={styles.statLabel}>Banidos</div>
-              <div className={styles.statValue}>{bannedCount}</div>
-            </div>
-            <div className={`${styles.statCard} ${styles.statGreen}`}>
-              <div className={styles.statLabel}>Limpos</div>
-              <div className={styles.statValue}>{players.length - bannedCount}</div>
-            </div>
-            <div className={`${styles.statCard} ${styles.statYellow}`}>
-              <div className={styles.statLabel}>Plataformas</div>
-              <div className={styles.statValue}>3</div>
+            <div className={styles.playerList}>
+              {bannedPlayers.map(p => {
+                const colors = getAvatarColor(p.display_name);
+                const ban = p.bans?.[0];
+                return (
+                  <div
+                    key={p.id}
+                    className={styles.playerItem}
+                    onClick={() => setSelectedPlayer(p)}
+                  >
+                    {p.avatar_url ? (
+                      <img src={p.avatar_url} className={styles.playerAvatar} alt="" />
+                    ) : (
+                      <div
+                        className={styles.playerAvatarFallback}
+                        style={{ background: colors.bg, color: colors.text }}
+                      >
+                        {(p.display_name || '?')[0].toUpperCase()}
+                      </div>
+                    )}
+                    <div className={styles.playerInfo}>
+                      <div className={styles.playerName}>{p.display_name}</div>
+                      <div className={styles.playerBanDetail}>
+                        {ban?.ban_type || 'Ban detectado'}
+                        {ban?.ban_date && ` · ${new Date(ban.ban_date + 'T00:00:00').toLocaleDateString('pt-BR')}`}
+                      </div>
+                    </div>
+                    <div className={styles.playerRight}>
+                      <span className={`${styles.badge} ${styles.badgeBanned}`}>Banido</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+        )}
 
-          {/* Bans recentes */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Bans recentes</h2>
-            <div className="card">
-              {players.filter(p => p.is_banned).length === 0 ? (
-                <div className={styles.emptyBans}>Nenhum ban detectado ainda 🎉</div>
-              ) : (
-                players.filter(p => p.is_banned).flatMap(p =>
-                  (p.bans || []).map((b, i) => (
-                    <div key={`${p.id}-${i}`} className={styles.banRow}>
-                      <img src={p.avatar_url || '/default-avatar.png'} className={styles.banAvatar} alt="" />
-                      <div className={styles.banInfo}>
-                        <span className={styles.banName}>{p.display_name}</span>
-                        <span className={styles.banPlatform}>{b.platform} · {b.ban_type}</span>
+        {/* Minha Lista */}
+        <div className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionTitle}>Minha lista</span>
+            <span className={styles.listCount}>{players.length} jogadores</span>
+          </div>
+          {players.length === 0 ? (
+            <div className={styles.playerList}>
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>&#x1F3AE;</div>
+                <div className={styles.emptyText}>Nenhum jogador monitorado</div>
+                <button className={styles.emptyBtn} onClick={() => setAddOpen(true)}>
+                  + Adicionar jogador
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.playerList}>
+              {players.map(p => {
+                const colors = getAvatarColor(p.display_name);
+                return (
+                  <div
+                    key={p.id}
+                    className={styles.playerItem}
+                    onClick={() => setSelectedPlayer(p)}
+                  >
+                    {p.avatar_url ? (
+                      <img src={p.avatar_url} className={styles.playerAvatar} alt="" />
+                    ) : (
+                      <div
+                        className={styles.playerAvatarFallback}
+                        style={{ background: colors.bg, color: colors.text }}
+                      >
+                        {(p.display_name || '?')[0].toUpperCase()}
                       </div>
-                      <span className={styles.banDate}>
-                        {new Date(b.detected_at).toLocaleDateString('pt-BR')}
-                      </span>
+                    )}
+                    <div className={styles.playerInfo}>
+                      <div className={styles.playerName}>{p.display_name}</div>
+                      <div className={styles.playerSub}>
+                        Adicionado {new Date(p.added_at).toLocaleDateString('pt-BR')}
+                      </div>
                     </div>
-                  ))
-                )
-              )}
-            </div>
-          </section>
-
-          {/* Minha Lista */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Minha Lista</h2>
-            <div className="card">
-              {players.length === 0 ? (
-                <div className={styles.emptyBans}>Nenhum jogador adicionado ainda</div>
-              ) : (
-                <table className={styles.playerTable}>
-                  <thead>
-                    <tr>
-                      <th></th>
-                      <th>Nickname</th>
-                      <th>Link Steam</th>
-                      <th>Adicionado em</th>
-                      <th>Status</th>
-                      <th>Plataforma / Tipo</th>
-                      <th>Data do Ban</th>
-                      <th>Jogos</th>
-                      <th>Listas</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {players.map(p => (
-                      <tr key={p.id}>
-                        <td>
-                          <img
-                            src={p.avatar_url || '/default-avatar.png'}
-                            alt=""
-                            style={{ width: 32, height: 32, borderRadius: '50%' }}
-                          />
-                        </td>
-                        <td className={styles.playerName}>{p.display_name}</td>
-                        <td>
-                          <a
-                            href={p.steam_profile_url || `https://steamcommunity.com/profiles/${p.steam_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.steamLink}
-                          >
-                            Ver perfil ↗
-                          </a>
-                        </td>
-                        <td className={styles.playerDate}>
-                          {new Date(p.added_at).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td>
-                          <span className={p.is_banned ? styles.statusBanned : styles.statusClean}>
-                            {p.is_banned ? 'BANIDO' : 'Limpo'}
-                          </span>
-                        </td>
-                        <td>
-                          {p.bans && p.bans.length > 0 ? (
-                            <div className={styles.banPlatforms}>
-                              {p.bans.map((b, i) => (
-                                <span key={i} className={styles.banPlatformPill}>
-                                  {b.platform === 'steam' ? '🛡️ Steam' :
-                                   b.platform === 'faceit' ? '⚡ FACEIT' :
-                                   '🎮 GC'} · {b.ban_type}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className={styles.playerDate}>—</span>
-                          )}
-                        </td>
-                        <td className={styles.playerDate}>
-                          {p.bans && p.bans.length > 0
-                            ? (p.bans[0].ban_date
-                                ? new Date(p.bans[0].ban_date + 'T00:00:00').toLocaleDateString('pt-BR')
-                                : new Date(p.bans[0].detected_at).toLocaleDateString('pt-BR'))
-                            : '—'}
-                        </td>
-                        <td>
-                          {p.bans && p.bans.length > 0 && p.bans[0].details?.games?.length > 0 ? (
-                            <div className={styles.banGames}>
-                              {p.bans[0].details.games.map((g, i) => (
-                                <span key={i} className={styles.gamePill}>
-                                  {g.name} ({g.hours}h)
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className={styles.playerDate}>—</span>
-                          )}
-                        </td>
-                        <td>
-                          <span className={styles.listCount}>
-                            {listCounts[p.steam_id] || 1}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            className={styles.removeBtn}
-                            onClick={() => handleRemove(p.id)}
-                            title="Remover jogador"
-                          >
-                            ✕
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </section>
-
-          {/* Plataformas */}
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Plataformas monitoradas</h2>
-            <div className={styles.platformGrid}>
-              {[
-                { name: 'Steam (CS2)', icon: '🛡️', color: '#66C0F4' },
-                { name: 'FACEIT', icon: '⚡', color: '#FF5500' },
-                { name: 'Gamer Club Brasil', icon: '🎮', color: '#00C9A7' },
-              ].map(p => (
-                <div key={p.name} className={styles.platformCard} style={{ borderColor: p.color + '44' }}>
-                  <span style={{ fontSize: 26 }}>{p.icon}</span>
-                  <div>
-                    <div className={styles.platformName}>{p.name}</div>
-                    <div className={styles.platformStatus} style={{ color: p.color }}>● Ativo</div>
+                    <div className={styles.playerRight}>
+                      <span className={`${styles.badge} ${p.is_banned ? styles.badgeBanned : styles.badgeClean}`}>
+                        {p.is_banned ? 'Banido' : 'Limpo'}
+                      </span>
+                      {listCounts[p.steam_id] > 1 && (
+                        <span className={styles.listCount}>
+                          {listCounts[p.steam_id]} listas
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </section>
+          )}
         </div>
-      </main>
+      </div>
+
+      {/* Bottom Navigation */}
+      <nav className={styles.bottomNav}>
+        <button
+          className={activeNav === 'home' ? styles.navItemActive : styles.navItem}
+          onClick={() => setActiveNav('home')}
+        >
+          <Crosshair size={20} color="currentColor" />
+          Home
+        </button>
+        <button
+          className={activeNav === 'lista' ? styles.navItemActive : styles.navItem}
+          onClick={() => setActiveNav('lista')}
+        >
+          <Radar size={20} color="currentColor" />
+          Lista
+        </button>
+        <button className={styles.fab} onClick={() => setAddOpen(true)}>
+          <Plus size={22} color="#fff" />
+        </button>
+        <button
+          className={activeNav === 'alertas' ? styles.navItemActive : styles.navItem}
+          onClick={() => setActiveNav('alertas')}
+        >
+          <Swords size={20} color="currentColor" />
+          Alertas
+        </button>
+        <button className={styles.navItem} onClick={handleSignOut}>
+          <Logout size={20} color="currentColor" />
+          Sair
+        </button>
+      </nav>
 
       {/* Modal: Adicionar jogador */}
       {addOpen && (
         <div className={styles.overlay} onClick={() => setAddOpen(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <button className={styles.modalClose} onClick={() => setAddOpen(false)}>✕</button>
+            <div className={styles.modalHandle} />
+            <button className={styles.modalClose} onClick={() => setAddOpen(false)}>&#x2715;</button>
             <h2 className={styles.modalTitle}>Adicionar jogador</h2>
             <p className={styles.modalSub}>Cole o link do perfil Steam ou o ID</p>
             <textarea
@@ -413,12 +344,120 @@ export default function Dashboard() {
             />
             {addError && <div className={styles.addError}>{addError}</div>}
             <button
-              className="btn btn-primary w-full"
+              className={styles.addBtn}
               onClick={handleAddPlayer}
               disabled={adding}
-              style={{ justifyContent: 'center', marginTop: 8 }}
             >
               {adding ? 'Adicionando...' : 'Adicionar e monitorar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Detalhe do jogador */}
+      {selectedPlayer && (
+        <div className={styles.overlay} onClick={() => setSelectedPlayer(null)}>
+          <div className={styles.detailSheet} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHandle} />
+            <button className={styles.modalClose} onClick={() => setSelectedPlayer(null)}>&#x2715;</button>
+
+            <div className={styles.detailHeader}>
+              {selectedPlayer.avatar_url ? (
+                <img src={selectedPlayer.avatar_url} className={styles.detailAvatar} alt="" />
+              ) : (
+                <div
+                  className={styles.detailAvatarFallback}
+                  style={{
+                    background: getAvatarColor(selectedPlayer.display_name).bg,
+                    color: getAvatarColor(selectedPlayer.display_name).text,
+                  }}
+                >
+                  {(selectedPlayer.display_name || '?')[0].toUpperCase()}
+                </div>
+              )}
+              <div>
+                <div className={styles.detailName}>{selectedPlayer.display_name}</div>
+                <div className={styles.detailId}>{selectedPlayer.steam_id}</div>
+                <div style={{ marginTop: 6 }}>
+                  <span className={`${styles.badge} ${selectedPlayer.is_banned ? styles.badgeBanned : styles.badgeClean}`}>
+                    {selectedPlayer.is_banned ? 'Banido' : 'Limpo'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Plataforma</span>
+              <span className={styles.detailValue}>
+                {selectedPlayer.bans?.[0]?.platform === 'steam' ? 'Steam' :
+                 selectedPlayer.bans?.[0]?.platform === 'faceit' ? 'FACEIT' :
+                 selectedPlayer.bans?.[0]?.platform || 'Steam'}
+              </span>
+            </div>
+
+            {selectedPlayer.is_banned && selectedPlayer.bans?.[0] && (
+              <>
+                <div className={styles.detailRow}>
+                  <span className={styles.detailLabel}>Tipo de ban</span>
+                  <span className={styles.detailValueDanger}>
+                    {selectedPlayer.bans[0].ban_type}
+                  </span>
+                </div>
+                <div className={styles.detailRow}>
+                  <span className={styles.detailLabel}>Data do ban</span>
+                  <span className={styles.detailValue}>
+                    {selectedPlayer.bans[0].ban_date
+                      ? new Date(selectedPlayer.bans[0].ban_date + 'T00:00:00').toLocaleDateString('pt-BR')
+                      : new Date(selectedPlayer.bans[0].detected_at).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+              </>
+            )}
+
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Monitorado por</span>
+              <span className={styles.detailValue}>
+                {listCounts[selectedPlayer.steam_id] || 1} usuario(s)
+              </span>
+            </div>
+
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Adicionado em</span>
+              <span className={styles.detailValue}>
+                {new Date(selectedPlayer.added_at).toLocaleDateString('pt-BR')}
+              </span>
+            </div>
+
+            {selectedPlayer.bans?.[0]?.details?.games?.length > 0 && (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E', padding: '14px 0 6px' }}>
+                  Jogos mais jogados
+                </div>
+                <div className={styles.detailGames}>
+                  {selectedPlayer.bans[0].details.games.map((g, i) => (
+                    <span key={i} className={styles.gamePill}>
+                      {g.name} ({g.hours}h)
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <a
+              href={selectedPlayer.steam_profile_url || `https://steamcommunity.com/profiles/${selectedPlayer.steam_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block', textAlign: 'center', padding: '12px',
+                borderRadius: 12, background: '#DBEAFE', color: '#2563EB',
+                fontSize: 14, fontWeight: 600, marginTop: 8, textDecoration: 'none',
+              }}
+            >
+              Ver perfil na Steam
+            </a>
+
+            <button className={styles.removeBtn} onClick={() => handleRemove(selectedPlayer.id)}>
+              Remover da lista
             </button>
           </div>
         </div>
