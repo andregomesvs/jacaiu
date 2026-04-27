@@ -57,16 +57,19 @@ export async function POST(request) {
     }
 
     const allNewBans = [];
+    const debugInfo = [];
 
     for (const player of playersToCheck) {
-      const newBans = await checkAllBansForPlayer(player);
+      const { newBans, debug } = await checkAllBansForPlayer(player);
       allNewBans.push(...newBans);
+      debugInfo.push(debug);
     }
 
     return Response.json({
       checked: playersToCheck.length,
       bansFound: allNewBans.length,
       bans: allNewBans,
+      debug: debugInfo,
     });
 
   } catch (error) {
@@ -79,12 +82,37 @@ export async function POST(request) {
 // Verificar todos os bans de um jogador
 // ============================================
 async function checkAllBansForPlayer(player) {
+  const debug = {
+    player: player.display_name,
+    originalSteamId: player.steam_id,
+    resolvedSteamId: null,
+    steamApiKey: !!STEAM_API_KEY,
+    steamResult: null,
+    faceitResult: null,
+    gcResult: null,
+  };
+
   console.log(`Verificando bans: ${player.display_name} (${player.steam_id})`);
 
-  const steamId = convertToSteam64(player.steam_id);
+  const steamId = await convertToSteam64(player.steam_id);
+  debug.resolvedSteamId = steamId;
+
   if (!steamId) {
     console.error('Steam ID inválido:', player.steam_id);
-    return [];
+    debug.error = 'Não foi possível resolver Steam ID';
+    return { newBans: [], debug };
+  }
+
+  // Se o ID resolvido é diferente do salvo, atualiza no banco
+  if (steamId !== player.steam_id) {
+    console.log(`Atualizando steam_id: ${player.steam_id} → ${steamId}`);
+    await supabaseAdmin
+      .from('players')
+      .update({
+        steam_id: steamId,
+        steam_profile_url: `https://steamcommunity.com/profiles/${steamId}`,
+      })
+      .eq('id', player.id);
   }
 
   const [steamResult, faceitResult, gamerclubResult] = await Promise.all([
@@ -93,7 +121,11 @@ async function checkAllBansForPlayer(player) {
     checkGamerClubBan(steamId),
   ]);
 
-  console.log('Resultados:', { steam: steamResult, faceit: faceitResult, gamerclub: gamerclubResult });
+  debug.steamResult = steamResult;
+  debug.faceitResult = faceitResult;
+  debug.gcResult = gamerclubResult;
+
+  console.log('Resultados:', JSON.stringify({ steam: steamResult, faceit: faceitResult, gamerclub: gamerclubResult }));
 
   const results = [
     { platform: 'steam', result: steamResult },
@@ -114,7 +146,10 @@ async function checkAllBansForPlayer(player) {
       .eq('platform', platform)
       .maybeSingle();
 
-    if (existingBan) continue;
+    if (existingBan) {
+      debug[`${platform}_existing`] = true;
+      continue;
+    }
 
     // Registra novo ban
     const { data: newBan, error } = await supabaseAdmin
@@ -131,6 +166,8 @@ async function checkAllBansForPlayer(player) {
 
     if (!error && newBan) {
       newBans.push(newBan);
+    } else if (error) {
+      debug[`${platform}_insertError`] = error.message;
     }
   }
 
@@ -144,7 +181,7 @@ async function checkAllBansForPlayer(player) {
     })
     .eq('id', player.id);
 
-  return newBans;
+  return { newBans, debug };
 }
 
 // ============================================
@@ -285,16 +322,40 @@ async function checkGamerClubBan(steam64) {
 // ============================================
 // Utilitários
 // ============================================
-function convertToSteam64(steamId) {
+async function convertToSteam64(steamId) {
   try {
     if (/^\d{17}$/.test(steamId)) return steamId;
     const urlMatch = steamId.match(/steamcommunity\.com\/(?:id|profiles)\/([^/]+)/);
-    if (urlMatch) return urlMatch[1];
+    if (urlMatch) {
+      const extracted = urlMatch[1];
+      if (/^\d{17}$/.test(extracted)) return extracted;
+      // É uma vanity URL, resolve via API
+      return await resolveVanityUrl(extracted);
+    }
     const match = steamId.match(/^STEAM_\d:(\d):(\d+)$/);
     if (match) {
       const y = BigInt(match[1]);
       const z = BigInt(match[2]);
       return (z * 2n + 76561197960265728n + y).toString();
+    }
+    // Pode ser um vanity name direto (sem URL), tenta resolver
+    if (/^[a-zA-Z0-9_-]+$/.test(steamId) && steamId.length < 40) {
+      const resolved = await resolveVanityUrl(steamId);
+      if (resolved) return resolved;
+    }
+    return null;
+  } catch { return null; }
+}
+
+async function resolveVanityUrl(vanityName) {
+  try {
+    if (!STEAM_API_KEY) return null;
+    const res = await fetch(
+      `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key=${STEAM_API_KEY}&vanityurl=${vanityName}`
+    );
+    const data = await res.json();
+    if (data?.response?.success === 1) {
+      return data.response.steamid;
     }
     return null;
   } catch { return null; }

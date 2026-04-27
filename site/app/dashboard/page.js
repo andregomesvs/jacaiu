@@ -119,6 +119,7 @@ export default function Dashboard() {
         body: JSON.stringify(playerId ? { playerId } : { checkAll: true }),
       });
       const result = await res.json();
+      console.log('[Scan] Resultado completo:', JSON.stringify(result, null, 2));
       if (result.bansFound > 0) {
         setCheckResult(`${result.bansFound} ban(s) encontrado(s)!`);
       } else {
