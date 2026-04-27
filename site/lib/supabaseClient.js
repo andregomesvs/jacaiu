@@ -85,13 +85,10 @@ export async function addPlayer(userId, steamInput) {
     return { error: { message: 'Steam ID ou URL inválido' } };
   }
 
-  console.log('[addPlayer] steamId parsed:', steamId);
   const profile = await fetchSteamProfile(steamId);
-  console.log('[addPlayer] profile response:', JSON.stringify(profile));
 
   // Usa o Steam64 resolvido pela API (importante para vanity URLs como /id/username)
   const resolvedSteamId = profile?.steam64 || steamId;
-  console.log('[addPlayer] resolvedSteamId:', resolvedSteamId);
 
   const { data, error } = await supabase
     .from('players')

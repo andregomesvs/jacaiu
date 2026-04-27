@@ -575,6 +575,163 @@
   letter-spacing: 1px;
 }
 
+/* Search bar */
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #111820;
+  border: 1px solid #1E2A3A;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+.searchBar:focus-within { border-color: #FF4655; }
+.searchInput {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #E8EAED;
+  font-size: 14px;
+  outline: none;
+  padding: 0;
+  font-family: inherit;
+}
+.searchInput::placeholder { color: #445566; }
+
+/* Filter tabs */
+.filterRow {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.filterTab {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  background: #151C28;
+  border: 1px solid #1E2A3A;
+  color: #7A8599;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: all 0.15s;
+}
+.filterTabActive {
+  composes: filterTab;
+  background: rgba(255,70,85,0.15);
+  border-color: rgba(255,70,85,0.4);
+  color: #FF4655;
+}
+
+/* Sort row */
+.sortRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.sortLabel {
+  font-size: 11px;
+  color: #7A8599;
+  font-weight: 600;
+}
+.sortBtn {
+  font-size: 11px;
+  color: #FF4655;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Alert items */
+.alertList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.alertItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #151C28;
+  border: 1px solid #1E2A3A;
+  border-radius: 10px;
+  animation: fadeIn 0.3s ease;
+}
+.alertIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.alertIconBan {
+  composes: alertIcon;
+  background: rgba(255,70,85,0.15);
+  border: 1px solid rgba(255,70,85,0.3);
+}
+.alertIconClean {
+  composes: alertIcon;
+  background: rgba(74,222,128,0.15);
+  border: 1px solid rgba(74,222,128,0.3);
+}
+.alertIconScan {
+  composes: alertIcon;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+}
+.alertIconAdd {
+  composes: alertIcon;
+  background: rgba(251,191,36,0.15);
+  border: 1px solid rgba(251,191,36,0.3);
+}
+.alertInfo { flex: 1; min-width: 0; }
+.alertTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #E8EAED;
+  line-height: 1.4;
+}
+.alertTime {
+  font-size: 11px;
+  color: #445566;
+  margin-top: 3px;
+}
+.alertBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Page title for Lista/Alertas */
+.pageTitle {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
 /* Desktop */
 @media (min-width: 768px) {
   .content { max-width: 500px; }

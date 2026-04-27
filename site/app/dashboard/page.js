@@ -6,7 +6,7 @@ import { supabase, getPlayers, addPlayer, removePlayer, getProfile } from '../..
 import { useRouter } from 'next/navigation';
 import styles from './dashboard.module.css';
 import GamingBackground from '../components/GamingBackground';
-import { Crosshair, Radar, Swords, Soldier, Target, Plus, Logout } from '../components/Icons';
+import { Crosshair, Radar, Swords, Soldier, Target, Plus, Logout, Search, Skull, Shield } from '../components/Icons';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -23,6 +23,9 @@ export default function Dashboard() {
   const [checkResult, setCheckResult] = useState('');
   const [listCounts, setListCounts] = useState({});
   const [activeNav, setActiveNav] = useState('home');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('todos');
+  const [sortOrder, setSortOrder] = useState('recent');
 
   async function ensureProfile(user) {
     const { data } = await supabase.from('profiles').select('id').eq('id', user.id).maybeSingle();
@@ -119,7 +122,6 @@ export default function Dashboard() {
         body: JSON.stringify(playerId ? { playerId } : { checkAll: true }),
       });
       const result = await res.json();
-      console.log('[Scan] Resultado completo:', JSON.stringify(result, null, 2));
       if (result.bansFound > 0) {
         setCheckResult(`${result.bansFound} ban(s) encontrado(s)!`);
       } else {
@@ -141,9 +143,6 @@ export default function Dashboard() {
   const bannedPlayers = players.filter(p => p.is_banned);
   const cleanPlayers = players.filter(p => !p.is_banned);
   const bannedCount = bannedPlayers.length;
-
-  // Debug: verificar dados dos jogadores
-  console.log('[Dashboard] players:', players.length, players);
 
   // Cores de avatar baseadas na inicial
   const avatarColors = ['#1A2332', '#1A2332', '#1A2332', '#1A2332', '#1A2332', '#1A2332'];
@@ -195,123 +194,326 @@ export default function Dashboard() {
         {/* Check result */}
         {checkResult && <div className={styles.checkResult}>{checkResult}</div>}
 
-        {/* Stats */}
-        <div className={styles.statsRow}>
-          <div className={`${styles.statCard} ${styles.statGreen}`}>
-            <div className={styles.statValue}>{players.length}</div>
-            <div className={styles.statLabel}>Monitorados</div>
-          </div>
-          <div className={`${styles.statCard} ${styles.statRed}`}>
-            <div className={styles.statValue}>{bannedCount}</div>
-            <div className={styles.statLabel}>Banidos</div>
-          </div>
-          <div className={`${styles.statCard} ${styles.statBlue}`}>
-            <div className={styles.statValue}>{players.length - bannedCount}</div>
-            <div className={styles.statLabel}>Limpos</div>
-          </div>
-        </div>
-
-        {/* Bans recentes */}
-        {bannedPlayers.length > 0 && (
-          <div className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <span className={styles.sectionTitle}>Bans recentes</span>
-            </div>
-            <div className={styles.playerList}>
-              {bannedPlayers.map(p => {
-                const colors = getAvatarColor(p.display_name);
-                const ban = p.bans?.[0];
-                return (
-                  <div
-                    key={p.id}
-                    className={styles.playerItem}
-                    onClick={() => setSelectedPlayer(p)}
-                  >
-                    {p.avatar_url ? (
-                      <img src={p.avatar_url} className={styles.playerAvatar} alt="" />
-                    ) : (
-                      <div
-                        className={styles.playerAvatarFallback}
-                        style={{ background: colors.bg, color: colors.text }}
-                      >
-                        {(p.display_name || '?')[0].toUpperCase()}
-                      </div>
-                    )}
-                    <div className={styles.playerInfo}>
-                      <div className={styles.playerName}>{p.display_name}</div>
-                      <div className={styles.playerBanDetail}>
-                        {ban?.ban_type || 'Ban detectado'}
-                        {ban?.ban_date && ` · ${new Date(ban.ban_date + 'T00:00:00').toLocaleDateString('pt-BR')}`}
-                      </div>
-                    </div>
-                    <div className={styles.playerRight}>
-                      <span className={`${styles.badge} ${styles.badgeBanned}`}>Banido</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Minha Lista */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <span className={styles.sectionTitle}>Minha lista</span>
-            <span className={styles.listCount}>{players.length} jogadores</span>
-          </div>
-          {players.length === 0 ? (
-            <div className={styles.playerList}>
-              <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>&#x1F3AE;</div>
-                <div className={styles.emptyText}>Nenhum jogador monitorado</div>
-                <button className={styles.emptyBtn} onClick={() => setAddOpen(true)}>
-                  + Adicionar jogador
-                </button>
+        {/* ===== HOME VIEW ===== */}
+        {activeNav === 'home' && (
+          <>
+            {/* Stats */}
+            <div className={styles.statsRow}>
+              <div className={`${styles.statCard} ${styles.statGreen}`}>
+                <div className={styles.statValue}>{players.length}</div>
+                <div className={styles.statLabel}>Monitorados</div>
+              </div>
+              <div className={`${styles.statCard} ${styles.statRed}`}>
+                <div className={styles.statValue}>{bannedCount}</div>
+                <div className={styles.statLabel}>Banidos</div>
+              </div>
+              <div className={`${styles.statCard} ${styles.statBlue}`}>
+                <div className={styles.statValue}>{players.length - bannedCount}</div>
+                <div className={styles.statLabel}>Limpos</div>
               </div>
             </div>
-          ) : (
-            <div className={styles.playerList}>
-              {players.map(p => {
-                const colors = getAvatarColor(p.display_name);
-                return (
-                  <div
-                    key={p.id}
-                    className={styles.playerItem}
-                    onClick={() => setSelectedPlayer(p)}
-                  >
-                    {p.avatar_url ? (
-                      <img src={p.avatar_url} className={styles.playerAvatar} alt="" />
-                    ) : (
-                      <div
-                        className={styles.playerAvatarFallback}
-                        style={{ background: colors.bg, color: colors.text }}
-                      >
-                        {(p.display_name || '?')[0].toUpperCase()}
+
+            {/* Bans recentes */}
+            {bannedPlayers.length > 0 && (
+              <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionTitle}>Bans recentes</span>
+                </div>
+                <div className={styles.playerList}>
+                  {bannedPlayers.map(p => {
+                    const colors = getAvatarColor(p.display_name);
+                    const ban = p.bans?.[0];
+                    return (
+                      <div key={p.id} className={styles.playerItem} onClick={() => setSelectedPlayer(p)}>
+                        {p.avatar_url ? (
+                          <img src={p.avatar_url} className={styles.playerAvatar} alt="" />
+                        ) : (
+                          <div className={styles.playerAvatarFallback} style={{ background: colors.bg, color: colors.text }}>
+                            {(p.display_name || '?')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className={styles.playerInfo}>
+                          <div className={styles.playerName}>{p.display_name}</div>
+                          <div className={styles.playerBanDetail}>
+                            {ban?.ban_type || 'Ban detectado'}
+                            {ban?.ban_date && ` · ${new Date(ban.ban_date + 'T00:00:00').toLocaleDateString('pt-BR')}`}
+                          </div>
+                        </div>
+                        <div className={styles.playerRight}>
+                          <span className={`${styles.badge} ${styles.badgeBanned}`}>Banido</span>
+                        </div>
                       </div>
-                    )}
-                    <div className={styles.playerInfo}>
-                      <div className={styles.playerName}>{p.display_name}</div>
-                      <div className={styles.playerSub}>
-                        Adicionado {new Date(p.added_at).toLocaleDateString('pt-BR')}
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Minha Lista (resumo) */}
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <span className={styles.sectionTitle}>Minha lista</span>
+                <button className={styles.sectionAction} onClick={() => setActiveNav('lista')}>Ver todos</button>
+              </div>
+              {players.length === 0 ? (
+                <div className={styles.playerList}>
+                  <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>&#x1F3AE;</div>
+                    <div className={styles.emptyText}>Nenhum jogador monitorado</div>
+                    <button className={styles.emptyBtn} onClick={() => setAddOpen(true)}>+ Adicionar jogador</button>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.playerList}>
+                  {players.slice(0, 5).map(p => {
+                    const colors = getAvatarColor(p.display_name);
+                    return (
+                      <div key={p.id} className={styles.playerItem} onClick={() => setSelectedPlayer(p)}>
+                        {p.avatar_url ? (
+                          <img src={p.avatar_url} className={styles.playerAvatar} alt="" />
+                        ) : (
+                          <div className={styles.playerAvatarFallback} style={{ background: colors.bg, color: colors.text }}>
+                            {(p.display_name || '?')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className={styles.playerInfo}>
+                          <div className={styles.playerName}>{p.display_name}</div>
+                          <div className={styles.playerSub}>Adicionado {new Date(p.added_at).toLocaleDateString('pt-BR')}</div>
+                        </div>
+                        <div className={styles.playerRight}>
+                          <span className={`${styles.badge} ${p.is_banned ? styles.badgeBanned : styles.badgeClean}`}>
+                            {p.is_banned ? 'Banido' : 'Limpo'}
+                          </span>
+                          {listCounts[p.steam_id] > 1 && (
+                            <span className={styles.listCount}>{listCounts[p.steam_id]} listas</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {players.length > 5 && (
+                <button className={styles.sectionAction} onClick={() => setActiveNav('lista')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: '12px 0', marginTop: 4 }}>
+                  Ver todos os {players.length} jogadores
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ===== LISTA VIEW ===== */}
+        {activeNav === 'lista' && (
+          <>
+            <h2 className={styles.pageTitle}>Minha Lista</h2>
+
+            {/* Search */}
+            <div className={styles.searchBar}>
+              <Search size={18} color="#445566" />
+              <input
+                className={styles.searchInput}
+                placeholder="Buscar jogador..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Filters */}
+            <div className={styles.filterRow}>
+              {[
+                { key: 'todos', label: `Todos (${players.length})` },
+                { key: 'banidos', label: `Banidos (${bannedCount})` },
+                { key: 'limpos', label: `Limpos (${players.length - bannedCount})` },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  className={filterStatus === f.key ? styles.filterTabActive : styles.filterTab}
+                  onClick={() => setFilterStatus(f.key)}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort */}
+            <div className={styles.sortRow}>
+              <span className={styles.sortLabel}>
+                {(() => {
+                  const filtered = players
+                    .filter(p => filterStatus === 'todos' ? true : filterStatus === 'banidos' ? p.is_banned : !p.is_banned)
+                    .filter(p => !searchQuery || p.display_name?.toLowerCase().includes(searchQuery.toLowerCase()));
+                  return `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}`;
+                })()}
+              </span>
+              <button className={styles.sortBtn} onClick={() => setSortOrder(prev => prev === 'recent' ? 'name' : 'recent')}>
+                {sortOrder === 'recent' ? 'Recentes' : 'A-Z'} ↕
+              </button>
+            </div>
+
+            {/* Player list */}
+            <div className={styles.playerList}>
+              {(() => {
+                let filtered = players
+                  .filter(p => filterStatus === 'todos' ? true : filterStatus === 'banidos' ? p.is_banned : !p.is_banned)
+                  .filter(p => !searchQuery || p.display_name?.toLowerCase().includes(searchQuery.toLowerCase()));
+
+                if (sortOrder === 'name') {
+                  filtered = [...filtered].sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
+                }
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>&#x1F50D;</div>
+                      <div className={styles.emptyText}>
+                        {searchQuery ? 'Nenhum jogador encontrado' : 'Nenhum jogador nesta categoria'}
                       </div>
                     </div>
-                    <div className={styles.playerRight}>
-                      <span className={`${styles.badge} ${p.is_banned ? styles.badgeBanned : styles.badgeClean}`}>
-                        {p.is_banned ? 'Banido' : 'Limpo'}
-                      </span>
-                      {listCounts[p.steam_id] > 1 && (
-                        <span className={styles.listCount}>
-                          {listCounts[p.steam_id]} listas
-                        </span>
+                  );
+                }
+
+                return filtered.map(p => {
+                  const colors = getAvatarColor(p.display_name);
+                  const ban = p.bans?.[0];
+                  return (
+                    <div key={p.id} className={styles.playerItem} onClick={() => setSelectedPlayer(p)}>
+                      {p.avatar_url ? (
+                        <img src={p.avatar_url} className={styles.playerAvatar} alt="" />
+                      ) : (
+                        <div className={styles.playerAvatarFallback} style={{ background: colors.bg, color: colors.text }}>
+                          {(p.display_name || '?')[0].toUpperCase()}
+                        </div>
                       )}
+                      <div className={styles.playerInfo}>
+                        <div className={styles.playerName}>{p.display_name}</div>
+                        <div className={p.is_banned ? styles.playerBanDetail : styles.playerSub}>
+                          {p.is_banned
+                            ? `${ban?.ban_type || 'Banido'} · ${ban?.ban_date ? new Date(ban.ban_date + 'T00:00:00').toLocaleDateString('pt-BR') : ''}`
+                            : `Adicionado ${new Date(p.added_at).toLocaleDateString('pt-BR')}`
+                          }
+                        </div>
+                      </div>
+                      <div className={styles.playerRight}>
+                        <span className={`${styles.badge} ${p.is_banned ? styles.badgeBanned : styles.badgeClean}`}>
+                          {p.is_banned ? 'Banido' : 'Limpo'}
+                        </span>
+                        {listCounts[p.steam_id] > 1 && (
+                          <span className={styles.listCount}>{listCounts[p.steam_id]} listas</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </>
+        )}
+
+        {/* ===== ALERTAS VIEW ===== */}
+        {activeNav === 'alertas' && (
+          <>
+            <h2 className={styles.pageTitle}>Alertas</h2>
+
+            {(() => {
+              // Monta lista de alertas a partir dos dados existentes
+              const alerts = [];
+
+              // Bans detectados
+              players.forEach(p => {
+                if (p.bans?.length > 0) {
+                  p.bans.forEach(ban => {
+                    alerts.push({
+                      type: 'ban',
+                      title: `${p.display_name} recebeu ${ban.ban_type || 'ban'}`,
+                      detail: ban.platform === 'steam' ? 'Steam' : ban.platform === 'faceit' ? 'FACEIT' : ban.platform || 'Steam',
+                      date: ban.detected_at || ban.ban_date,
+                      playerName: p.display_name,
+                    });
+                  });
+                }
+              });
+
+              // Jogadores adicionados
+              players.forEach(p => {
+                alerts.push({
+                  type: 'add',
+                  title: `${p.display_name} adicionado à lista`,
+                  detail: p.steam_id,
+                  date: p.added_at,
+                });
+              });
+
+              // Jogadores limpos (último scan)
+              players.filter(p => !p.is_banned && p.last_checked_at).forEach(p => {
+                alerts.push({
+                  type: 'clean',
+                  title: `${p.display_name} verificado — limpo`,
+                  detail: 'Nenhum ban encontrado',
+                  date: p.last_checked_at,
+                });
+              });
+
+              // Ordena por data (mais recente primeiro)
+              alerts.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+              if (alerts.length === 0) {
+                return (
+                  <div className={styles.playerList}>
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>&#x1F514;</div>
+                      <div className={styles.emptyText}>Nenhum alerta ainda</div>
+                      <div style={{ fontSize: 12, color: '#445566' }}>
+                        Adicione jogadores e faça um scan para ver alertas aqui
+                      </div>
                     </div>
                   </div>
                 );
-              })}
-            </div>
-          )}
-        </div>
+              }
+
+              function timeAgo(dateStr) {
+                if (!dateStr) return '';
+                const diff = Date.now() - new Date(dateStr).getTime();
+                const mins = Math.floor(diff / 60000);
+                if (mins < 1) return 'Agora';
+                if (mins < 60) return `${mins}min atrás`;
+                const hours = Math.floor(mins / 60);
+                if (hours < 24) return `${hours}h atrás`;
+                const days = Math.floor(hours / 24);
+                if (days < 30) return `${days}d atrás`;
+                return new Date(dateStr).toLocaleDateString('pt-BR');
+              }
+
+              return (
+                <div className={styles.alertList}>
+                  {alerts.map((alert, i) => (
+                    <div key={i} className={styles.alertItem}>
+                      <div className={
+                        alert.type === 'ban' ? styles.alertIconBan :
+                        alert.type === 'clean' ? styles.alertIconClean :
+                        alert.type === 'scan' ? styles.alertIconScan :
+                        styles.alertIconAdd
+                      }>
+                        {alert.type === 'ban' && <Skull size={18} color="#FF4655" />}
+                        {alert.type === 'clean' && <Shield size={18} color="#4ADE80" />}
+                        {alert.type === 'scan' && <Target size={18} color="#3B82F6" />}
+                        {alert.type === 'add' && <Plus size={18} color="#FBBF24" />}
+                      </div>
+                      <div className={styles.alertInfo}>
+                        <div className={styles.alertTitle}>{alert.title}</div>
+                        <div className={styles.alertTime}>
+                          {alert.detail} · {timeAgo(alert.date)}
+                        </div>
+                      </div>
+                      {alert.type === 'ban' && (
+                        <span className={`${styles.alertBadge} ${styles.badgeBanned}`}>Ban</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </>
+        )}
       </div>
 
       {/* Bottom Navigation */}
@@ -467,7 +669,8 @@ export default function Dashboard() {
               rel="noopener noreferrer"
               style={{
                 display: 'block', textAlign: 'center', padding: '12px',
-                borderRadius: 12, background: '#DBEAFE', color: '#2563EB',
+                borderRadius: 10, background: 'rgba(59,130,246,0.15)', color: '#60A5FA',
+                border: '1px solid rgba(59,130,246,0.3)',
                 fontSize: 14, fontWeight: 600, marginTop: 8, textDecoration: 'none',
               }}
             >
